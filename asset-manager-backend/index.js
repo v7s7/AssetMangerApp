@@ -11,6 +11,7 @@ app.use(express.json());
 // DB setup
 const db = new sqlite3.Database('./assets.db');
 
+// Assets table
 db.run(`CREATE TABLE IF NOT EXISTS assets (
   assetId TEXT PRIMARY KEY,
   "group" TEXT,
@@ -46,6 +47,11 @@ db.run(`CREATE TABLE IF NOT EXISTS assets (
   replacementPlan TEXT
 )`);
 
+// Reserved asset IDs table
+db.run(`CREATE TABLE IF NOT EXISTS used_ids (
+  assetId TEXT PRIMARY KEY
+)`);
+
 // === ROUTES ===
 
 // Get all assets
@@ -65,11 +71,13 @@ app.post('/assets', (req, res) => {
 
   db.run(sql, Object.values(asset), function (err) {
     if (err) return res.status(500).json({ error: err.message });
+
+    db.run(`INSERT OR IGNORE INTO used_ids (assetId) VALUES (?)`, [asset.assetId]);
     res.status(201).json({ id: asset.assetId });
   });
 });
 
-// Update asset by ID — allows ID change
+// Update asset (including ID change)
 app.put('/assets/:id', (req, res) => {
   const asset = req.body;
   const oldId = req.params.id;
@@ -80,7 +88,6 @@ app.put('/assets/:id', (req, res) => {
   }
 
   if (oldId !== newId) {
-    // Delete old ID, insert new one
     db.run(`DELETE FROM assets WHERE assetId = ?`, oldId, function (err) {
       if (err) return res.status(500).json({ error: err.message });
 
@@ -90,11 +97,12 @@ app.put('/assets/:id', (req, res) => {
 
       db.run(sql, Object.values(asset), function (err2) {
         if (err2) return res.status(500).json({ error: err2.message });
+
+        db.run(`INSERT OR IGNORE INTO used_ids (assetId) VALUES (?)`, [asset.assetId]);
         res.json({ updated: 1 });
       });
     });
   } else {
-    // Standard update
     const updates = Object.keys(asset)
       .map(k => `${k === 'group' ? `"group"` : k} = ?`)
       .join(', ');
@@ -116,7 +124,7 @@ app.delete('/assets/:id', (req, res) => {
   });
 });
 
-// Force delete: assetId, macAddress or ipAddress via query params
+// Force delete by assetId, macAddress, or ipAddress
 app.delete('/assets/force-delete', (req, res) => {
   const { assetId, macAddress, ipAddress } = req.query;
 
@@ -148,7 +156,7 @@ app.delete('/assets/force-delete', (req, res) => {
   });
 });
 
-// Get next ID based on assetType
+// Generate next unique ID
 app.get('/assets/next-id/:type', (req, res) => {
   const rawType = req.params.type;
 
@@ -157,7 +165,7 @@ app.get('/assets/next-id/:type', (req, res) => {
   }
 
   const safePrefix = rawType
-    .replace(/[^a-zA-Z0-9]/g, '') // remove special chars
+    .replace(/[^a-zA-Z0-9]/g, '')
     .toUpperCase()
     .slice(0, 3);
 
@@ -165,7 +173,7 @@ app.get('/assets/next-id/:type', (req, res) => {
     return res.status(400).json({ error: 'Invalid asset type prefix' });
   }
 
-  db.all(`SELECT assetId FROM assets WHERE assetId LIKE '${safePrefix}-%'`, [], (err, rows) => {
+  db.all(`SELECT assetId FROM used_ids WHERE assetId LIKE '${safePrefix}-%'`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
 
     const numbers = rows
@@ -177,6 +185,7 @@ app.get('/assets/next-id/:type', (req, res) => {
 
     const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
     const id = `${safePrefix}-${String(next).padStart(3, '0')}`;
+
     res.json({ id });
   });
 });

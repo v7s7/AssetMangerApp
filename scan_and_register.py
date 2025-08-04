@@ -12,7 +12,6 @@ SUBNET = "10.27.16.217"
 WMI_USERNAME = "os-admin"
 WMI_PASSWORD = "Bahrain@2024"
 
-
 def get_mac_address(ip):
     try:
         arp = ARP(pdst=ip)
@@ -23,7 +22,6 @@ def get_mac_address(ip):
     except:
         pass
     return "Unknown"
-
 
 def scan_device(ip):
     print(f"[•] Scanning {ip}")
@@ -109,12 +107,11 @@ def scan_device(ip):
 
     return data
 
-
 def auto_detect_group_and_type(os_name, model):
     os_name = (os_name or "").lower()
     model = (model or "").lower()
     if "windows" in os_name:
-        return "Windows", "Laptop" if any(k in model for k in ["latitude", "thinkpad", "elitebook"]) else "PC"
+        return "Windows", "PC"
     elif any(k in os_name for k in ["linux", "ubuntu"]):
         return "Servers & Infra", "Server"
     elif any(k in os_name for k in ["ios", "android"]):
@@ -123,6 +120,17 @@ def auto_detect_group_and_type(os_name, model):
         return "Servers & Infra", "Server"
     return "Windows", "PC"
 
+def get_next_asset_id(asset_type):
+    try:
+        encoded_type = requests.utils.quote(asset_type)
+        res = requests.get(f"{API_BASE.replace('/assets', '')}/assets/next-id/{encoded_type}")
+        if res.status_code == 200:
+            return res.json().get("id", "UNK-001")
+        else:
+            print(f"[-] Failed to get next ID for {asset_type}: {res.status_code}")
+    except Exception as e:
+        print(f"[-] Error fetching asset ID: {e}")
+    return "UNK-001"
 
 def is_duplicate(mac, ip):
     try:
@@ -137,36 +145,9 @@ def is_duplicate(mac, ip):
         pass
     return False
 
-
-def get_next_asset_id():
-    try:
-        res = requests.get(API_BASE)
-        if res.status_code != 200:
-            print("[-] Couldn't fetch assets for ID generation")
-            return "A-001"
-
-        assets = res.json()
-        max_id = 0
-
-        for a in assets:
-            asset_id = a.get("assetId", "")
-            match = re.match(r"A-(\d+)", asset_id)
-            if match:
-                num = int(match.group(1))
-                if num > max_id:
-                    max_id = num
-
-        next_id = f"A-{max_id + 1:03d}"
-        return next_id
-
-    except Exception as e:
-        print(f"[-] Error generating asset ID: {e}")
-        return "A-001"
-
-
 def format_for_upload(info):
     group, assetType = auto_detect_group_and_type(info.get("os", ""), info.get("model", ""))
-    asset_id = get_next_asset_id()
+    asset_id = get_next_asset_id(assetType)
 
     return {
         "assetId": asset_id,
@@ -203,13 +184,11 @@ def format_for_upload(info):
         "replacementPlan": ""
     }
 
-
 def discover_hosts():
     print(f"[*] Scanning subnet {SUBNET}...")
     nm = nmap.PortScanner()
     nm.scan(hosts=SUBNET, arguments="-sn")
     return [h for h in nm.all_hosts() if nm[h].state() == "up"]
-
 
 def main():
     for ip in discover_hosts():
@@ -226,7 +205,6 @@ def main():
                 print(f"[-] Failed {ip}: {res.status_code} - {res.text}")
         except Exception as e:
             print(f"[-] Error with {ip}: {e}")
-
 
 if __name__ == "__main__":
     main()
