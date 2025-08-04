@@ -17,17 +17,20 @@ export async function addAsset(asset) {
   if (!res.ok) throw new Error('Failed to add asset');
 }
 
-// Update existing asset
-export async function updateAsset(asset) {
-  const res = await fetch(`${API_URL}/assets/${asset.assetId}`, {
+// Update existing asset, allow assetId to change
+export async function updateAsset(updatedAsset, originalId) {
+  const targetId = originalId || updatedAsset.assetId;
+
+  const res = await fetch(`${API_URL}/assets/${targetId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(asset)
+    body: JSON.stringify(updatedAsset)
   });
+
   if (!res.ok) throw new Error('Failed to update asset');
 }
 
-// Delete asset by assetId (default method)
+// Delete asset by assetId
 export async function deleteAsset(assetId) {
   if (!assetId) throw new Error('Asset ID is required for standard deletion');
   const res = await fetch(`${API_URL}/assets/${assetId}`, {
@@ -37,7 +40,7 @@ export async function deleteAsset(assetId) {
   return res.json();
 }
 
-// Force delete asset using assetId, macAddress, or ipAddress
+// Force delete by assetId, macAddress, or ipAddress
 export async function forceDeleteAsset({ assetId, macAddress, ipAddress }) {
   const params = new URLSearchParams();
   if (assetId) params.append("assetId", assetId);
@@ -56,11 +59,16 @@ export async function forceDeleteAsset({ assetId, macAddress, ipAddress }) {
   return res.json();
 }
 
-
-// Get the next available asset ID
-export async function getNextAssetId() {
-  const res = await fetch(`${API_URL}/assets/next-id`);
+// Get the next available asset ID (based on assetType)
+export async function getNextAssetId(assetType = '') {
+  const encodedType = encodeURIComponent(assetType);
+  const res = await fetch(`${API_URL}/assets/next-id/${encodedType}`);
   if (!res.ok) throw new Error('Failed to get next asset ID');
   const { id } = await res.json();
   return id;
+}
+
+// (Optional alias)
+export async function getNextAssetIdByType(assetType) {
+  return getNextAssetId(assetType);
 }

@@ -69,25 +69,43 @@ app.post('/assets', (req, res) => {
   });
 });
 
-// Update asset by ID
+// Update asset by ID — allows ID change
 app.put('/assets/:id', (req, res) => {
   const asset = req.body;
+  const oldId = req.params.id;
+  const newId = asset.assetId;
 
   if (!asset || Object.keys(asset).length === 0) {
     return res.status(400).json({ error: "No data provided for update" });
   }
 
-  const updates = Object.keys(asset)
-    .map(k => `${k === 'group' ? `"group"` : k} = ?`)
-    .join(', ');
+  if (oldId !== newId) {
+    // Delete old ID, insert new one
+    db.run(`DELETE FROM assets WHERE assetId = ?`, oldId, function (err) {
+      if (err) return res.status(500).json({ error: err.message });
 
-  const sql = `UPDATE assets SET ${updates} WHERE assetId = ?`;
-  const values = [...Object.values(asset), req.params.id];
+      const fields = Object.keys(asset).map(f => f === 'group' ? `"group"` : f);
+      const placeholders = fields.map(() => '?').join(',');
+      const sql = `INSERT INTO assets (${fields.join(',')}) VALUES (${placeholders})`;
 
-  db.run(sql, values, function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ updated: this.changes });
-  });
+      db.run(sql, Object.values(asset), function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ updated: 1 });
+      });
+    });
+  } else {
+    // Standard update
+    const updates = Object.keys(asset)
+      .map(k => `${k === 'group' ? `"group"` : k} = ?`)
+      .join(', ');
+    const sql = `UPDATE assets SET ${updates} WHERE assetId = ?`;
+    const values = [...Object.values(asset), oldId];
+
+    db.run(sql, values, function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ updated: this.changes });
+    });
+  }
 });
 
 // Delete by assetId only
@@ -130,17 +148,35 @@ app.delete('/assets/force-delete', (req, res) => {
   });
 });
 
-// Get next asset ID
-app.get('/assets/next-id', (req, res) => {
-  db.all('SELECT assetId FROM assets', [], (err, rows) => {
+// Get next ID based on assetType
+app.get('/assets/next-id/:type', (req, res) => {
+  const rawType = req.params.type;
+
+  if (!rawType || rawType.length < 2) {
+    return res.status(400).json({ error: 'Invalid asset type' });
+  }
+
+  const safePrefix = rawType
+    .replace(/[^a-zA-Z0-9]/g, '') // remove special chars
+    .toUpperCase()
+    .slice(0, 3);
+
+  if (!safePrefix) {
+    return res.status(400).json({ error: 'Invalid asset type prefix' });
+  }
+
+  db.all(`SELECT assetId FROM assets WHERE assetId LIKE '${safePrefix}-%'`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
 
     const numbers = rows
-      .map(row => parseInt(row.assetId.replace('ASSET-', '')))
-      .filter(n => !isNaN(n));
+      .map(row => {
+        const match = row.assetId.match(new RegExp(`^${safePrefix}-(\\d+)$`));
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter(n => n !== null);
 
     const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-    const id = `ASSET-${String(next).padStart(4, '0')}`;
+    const id = `${safePrefix}-${String(next).padStart(3, '0')}`;
     res.json({ id });
   });
 });

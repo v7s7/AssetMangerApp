@@ -4,21 +4,21 @@ import {
   updateAsset,
   getNextAssetId
 } from '../utils/api';
-
-
 import { groups } from '../data/groups';
 import { categories } from '../data/categories';
 
 export default function AssetForm({ onSave, editData }) {
   const isEdit = !!editData;
   const [formData, setFormData] = useState(null);
+  const [originalId, setOriginalId] = useState(null);
 
   useEffect(() => {
     if (isEdit) {
       setFormData(editData);
+      setOriginalId(editData.assetId);
     } else {
       const init = async () => {
-        const newId = await getNextAssetId();
+const newId = await getNextAssetId('General');
         setFormData({
           assetId: newId,
           group: '',
@@ -58,19 +58,33 @@ export default function AssetForm({ onSave, editData }) {
     }
   }, [editData, isEdit]);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    if (name === 'assetType') {
+      try {
+        const newId = await getNextAssetId(value);
+        setFormData((prev) => ({
+          ...prev,
+          assetType: value,
+          assetId: newId
+        }));
+      } catch (err) {
+        alert('Failed to generate asset ID: ' + err.message);
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (isEdit) {
-        await updateAsset(formData);
+        await updateAsset(formData, originalId || formData.assetId);
         alert('Asset updated');
       } else {
         await addAsset(formData);
@@ -87,23 +101,15 @@ export default function AssetForm({ onSave, editData }) {
   const sections = [
     {
       title: 'Basic Info',
-      fields: [
-        'assetId', 'group', 'assetType', 'brandModel',
-        'serialNumber', 'assignedTo'
-      ]
+      fields: ['assetId', 'group', 'assetType', 'brandModel', 'serialNumber', 'assignedTo']
     },
     {
       title: 'Technical Details',
-      fields: [
-        'ipAddress', 'macAddress', 'osFirmware', 'cpu',
-        'ram', 'storage', 'portDetails', 'powerConsumption'
-      ]
+      fields: ['ipAddress', 'macAddress', 'osFirmware', 'cpu', 'ram', 'storage', 'portDetails', 'powerConsumption']
     },
     {
       title: 'Lifecycle Info',
-      fields: [
-        'purchaseDate', 'warrantyExpiry', 'eol', 'maintenanceExpiry'
-      ]
+      fields: ['purchaseDate', 'warrantyExpiry', 'eol', 'maintenanceExpiry']
     },
     {
       title: 'Financial Info',
@@ -123,16 +129,11 @@ export default function AssetForm({ onSave, editData }) {
     }
   ];
 
-  const numericFields = [
-    'ram', 'storage', 'powerConsumption',
-    'cost', 'depreciation', 'residualValue'
-  ];
+  const numericFields = ['ram', 'storage', 'powerConsumption', 'cost', 'depreciation', 'residualValue'];
 
   return (
     <form onSubmit={handleSubmit} style={formContainer}>
-      <h2 style={formHeader}>
-        {isEdit ? 'Edit Asset' : 'Add New Asset'}
-      </h2>
+      <h2 style={formHeader}>{isEdit ? 'Edit Asset' : 'Add New Asset'}</h2>
 
       {sections.map((section) => (
         <fieldset key={section.title} style={fieldsetStyle}>
@@ -144,12 +145,8 @@ export default function AssetForm({ onSave, editData }) {
             const isAssetType = field === 'assetType';
             const isNumeric = numericFields.includes(field);
 
-            const label =
-              field.charAt(0).toUpperCase() +
-              field
-                .slice(1)
-                .replace(/([A-Z])/g, ' $1')
-                .replace(/_/g, ' ');
+            const label = field.charAt(0).toUpperCase() +
+              field.slice(1).replace(/([A-Z])/g, ' $1').replace(/_/g, ' ');
 
             return (
               <div key={field} style={fieldRow}>
@@ -193,7 +190,6 @@ export default function AssetForm({ onSave, editData }) {
                     name={field}
                     value={formData[field]}
                     onChange={handleChange}
-                    disabled={field === 'assetId' && isEdit}
                     style={inputStyle}
                   />
                 )}
