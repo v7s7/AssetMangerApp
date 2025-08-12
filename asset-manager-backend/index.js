@@ -66,6 +66,10 @@ function requireMinimalFields(body) {
   return missing;
 }
 
+function rollback(e, res) {
+  db.run('ROLLBACK', () => res.status(500).json({ error: e.message }));
+}
+
 // === ROUTES ===
 
 // Health check (optional)
@@ -140,7 +144,7 @@ app.post('/assets/bulk', (req, res) => {
   });
 });
 
-// Update asset (including ID change)
+// Update asset (including ID change) — transactional when ID changes
 app.put('/assets/:id', (req, res) => {
   const asset = req.body;
   const oldId = req.params.id;
@@ -149,25 +153,30 @@ app.put('/assets/:id', (req, res) => {
   if (!asset || Object.keys(asset).length === 0) {
     return res.status(400).json({ error: 'No data provided for update' });
   }
-
   const missing = requireMinimalFields(asset);
   if (missing.length) {
     return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
   }
 
+  const fields = Object.keys(asset).map(f => (f === 'group' ? `"group"` : f));
+  const placeholders = fields.map(() => '?').join(',');
+
   if (oldId !== newId) {
-    db.run(`DELETE FROM assets WHERE assetId = ?`, oldId, function (err) {
-      if (err) return res.status(500).json({ error: err.message });
+    db.serialize(() => {
+      db.run('BEGIN');
+      db.run(`DELETE FROM assets WHERE assetId = ?`, oldId, function (err) {
+        if (err) return rollback(err, res);
 
-      const fields = Object.keys(asset).map(f => (f === 'group' ? `"group"` : f));
-      const placeholders = fields.map(() => '?').join(',');
-      const sql = `INSERT INTO assets (${fields.join(',')}) VALUES (${placeholders})`;
+        const sqlInsert = `INSERT INTO assets (${fields.join(',')}) VALUES (${placeholders})`;
+        db.run(sqlInsert, Object.values(asset), function (err2) {
+          if (err2) return rollback(err2, res);
 
-      db.run(sql, Object.values(asset), function (err2) {
-        if (err2) return res.status(500).json({ error: err2.message });
+          db.run(`INSERT OR IGNORE INTO used_ids (assetId) VALUES (?)`, [asset.assetId], function (err3) {
+            if (err3) return rollback(err3, res);
 
-        db.run(`INSERT OR IGNORE INTO used_ids (assetId) VALUES (?)`, [asset.assetId]);
-        res.json({ updated: 1 });
+            db.run('COMMIT', () => res.json({ updated: 1 }));
+          });
+        });
       });
     });
   } else {
@@ -224,7 +233,7 @@ app.delete('/assets/force-delete', (req, res) => {
   });
 });
 
-// Generate next unique ID
+// Generate next unique ID (non-reserving)
 app.get('/assets/next-id/:type', (req, res) => {
   const rawType = req.params.type;
 
@@ -289,13 +298,14 @@ app.post('/scan', (req, res) => {
     }
   });
 });
-// index.js (add near bottom, before app.listen)
+
+// Streaming scan (SSE)
 app.get('/scan/stream', (req, res) => {
   const target = (req.query.target || '').trim();
   if (!target) return res.status(400).end('Target is required');
 
   const PY = process.env.PYTHON || 'python'; // or full path
-  const script = require('path').join(__dirname, 'scanner.py');
+  const script = path.join(__dirname, 'scanner.py');
   const args = [script, '--target', target, '--api-url', `http://localhost:${PORT}`, '--dry-run', '--json'];
 
   // SSE headers
@@ -304,7 +314,7 @@ app.get('/scan/stream', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders?.();
 
-  const child = require('child_process').spawn(PY, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(PY, args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
   let out = '';
 
@@ -312,6 +322,11 @@ app.get('/scan/stream', (req, res) => {
     res.write(`event: ${event}\n`);
     res.write(`data: ${data}\n\n`);
   };
+
+  // Optional: heartbeat to keep some proxies from closing the stream
+  const keepAlive = setInterval(() => {
+    res.write(':\n\n');
+  }, 20000);
 
   child.stderr.on('data', (d) => {
     // Each line is a log line from scanner.py
@@ -325,6 +340,7 @@ app.get('/scan/stream', (req, res) => {
   });
 
   child.on('close', (code) => {
+    clearInterval(keepAlive);
     if (code !== 0) {
       send('error', `Scanner exited with code ${code}`);
       return res.end();
@@ -339,6 +355,7 @@ app.get('/scan/stream', (req, res) => {
   });
 
   req.on('close', () => {
+    clearInterval(keepAlive);
     try { child.kill(); } catch {}
   });
 });

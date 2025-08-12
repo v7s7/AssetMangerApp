@@ -2,12 +2,19 @@
 
 // Prefer environment variable; fall back to your current server IP.
 // Restart `npm start` after changing .env (REACT_APP_API_URL).
-const API_URL = (process.env.REACT_APP_API_URL || 'http://10.27.16.97:4000').replace(/\/+$/, '');
+export const API_URL = (process.env.REACT_APP_API_URL || 'http://10.27.16.97:4000').replace(/\/+$/, '');
 
 // Small helper to standardize fetch + errors
 async function request(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    // Only set JSON header when we actually send a body
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.headers || {}),
+    },
+    method,
     ...options,
   });
 
@@ -26,14 +33,16 @@ async function request(path, options = {}) {
   return payload;
 }
 
+// ===== Assets CRUD =====
+
 // Get all assets
 export async function getAllAssets() {
   return request('/assets', { method: 'GET' });
 }
 
-// Add new asset
+// Add new asset (expects assetId present, per current backend contract)
 export async function addAsset(asset) {
-  await request('/assets', {
+  return request('/assets', {
     method: 'POST',
     body: JSON.stringify(asset),
   });
@@ -42,7 +51,7 @@ export async function addAsset(asset) {
 // Update existing asset, allow assetId to change
 export async function updateAsset(updatedAsset, originalId) {
   const targetId = encodeURIComponent(originalId || updatedAsset.assetId);
-  await request(`/assets/${targetId}`, {
+  return request(`/assets/${targetId}`, {
     method: 'PUT',
     body: JSON.stringify(updatedAsset),
   });
@@ -65,41 +74,35 @@ export async function forceDeleteAsset({ assetId, macAddress, ipAddress }) {
   return request(`/assets/force-delete?${params.toString()}`, { method: 'DELETE' });
 }
 
+// ===== ID Generation =====
+
 // Get the next available asset ID (based on assetType)
+// Note: this does NOT reserve the ID on the server.
 export async function getNextAssetId(assetType = '') {
   const encodedType = encodeURIComponent(assetType);
   const { id } = await request(`/assets/next-id/${encodedType}`, { method: 'GET' });
   return id;
 }
 
-// (Optional alias)
+// Optional alias
 export async function getNextAssetIdByType(assetType) {
   return getNextAssetId(assetType);
 }
-// Add below your existing exports
 
+// ===== Scanning & Bulk Insert =====
+
+// Non-streaming scan (returns JSON list of discovered devices; not inserted yet)
 export async function scanNetwork(target) {
-  const res = await fetch(`${API_URL}/scan`, {
+  return request(`/scan`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ target })
+    body: JSON.stringify({ target }),
   });
-  if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error(t || 'Scan failed');
-  }
-  return res.json(); // returns array of asset-like payloads (not yet inserted)
 }
 
+// Bulk add assets
 export async function bulkAddAssets(assets) {
-  const res = await fetch(`${API_URL}/assets/bulk`, {
+  return request(`/assets/bulk`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assets })
+    body: JSON.stringify({ assets }),
   });
-  if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error(t || 'Bulk insert failed');
-  }
-  return res.json();
 }

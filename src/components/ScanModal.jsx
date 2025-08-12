@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+// src/components/ScanModal.jsx
+import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
-import { bulkAddAssets } from '../utils/api'; // scanNetwork no longer needed for streaming
-
-const API_URL = 'http://10.27.16.97:4000'; // or import from your api.js if exported
+import { API_URL, bulkAddAssets } from '../utils/api';
 
 export default function ScanModal({ isOpen, onClose, onImported }) {
   const [target, setTarget] = useState('');
@@ -14,6 +13,12 @@ export default function ScanModal({ isOpen, onClose, onImported }) {
   const [error, setError] = useState('');
 
   const pushLog = (line) => setLogs((prev) => [...prev, line].slice(-500));
+
+  const cleanupSource = () => {
+    try { source?.close(); } catch {}
+    setSource(null);
+    setLoading(false);
+  };
 
   const handleScan = () => {
     setError('');
@@ -33,11 +38,11 @@ export default function ScanModal({ isOpen, onClose, onImported }) {
 
     es.addEventListener('result', (e) => {
       try {
-        const list = JSON.parse(e.data);
-        setDevices(list);
-        setSelected(Object.fromEntries(list.map(d => [d.assetId, true])));
-        pushLog(`Received ${list.length} devices.`);
-      } catch (err) {
+        const list = JSON.parse(e.data || '[]');
+        setDevices(Array.isArray(list) ? list : []);
+        setSelected(Object.fromEntries((Array.isArray(list) ? list : []).map(d => [d.assetId, true])));
+        pushLog(`Received ${Array.isArray(list) ? list.length : 0} devices.`);
+      } catch {
         setError('Invalid result from scanner.');
       } finally {
         es.close();
@@ -46,7 +51,8 @@ export default function ScanModal({ isOpen, onClose, onImported }) {
       }
     });
 
-    es.addEventListener('error', (e) => {
+    es.addEventListener('error', () => {
+      // Some proxies emit a generic error during open; if no source yet, ignore once.
       pushLog('Scanner error.');
       setError('Scan failed.');
       es.close();
@@ -70,11 +76,16 @@ export default function ScanModal({ isOpen, onClose, onImported }) {
   };
 
   const stopScan = () => {
-    source?.close();
-    setSource(null);
-    setLoading(false);
+    cleanupSource();
     pushLog('Scan cancelled.');
   };
+
+  // Ensure ES is closed when modal closes or component unmounts
+  useEffect(() => {
+    if (!isOpen) cleanupSource();
+    return () => cleanupSource();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   return (
     <Modal isOpen={isOpen} onClose={() => { stopScan(); onClose(); }}>
@@ -100,7 +111,11 @@ export default function ScanModal({ isOpen, onClose, onImported }) {
             Stop
           </button>
         )}
-        <button onClick={handleImport} disabled={loading || devices.length === 0} style={btnSecondary}>
+        <button
+          onClick={handleImport}
+          disabled={loading || devices.length === 0}
+          style={btnSecondary}
+        >
           Import Selected
         </button>
       </div>
