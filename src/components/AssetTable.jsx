@@ -1,10 +1,11 @@
+// src/components/AssetTable.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { getAllAssets, deleteAsset, forceDeleteAsset } from '../utils/api';
 import AssetForm from './AssetForm';
 import SmartExportPanel from './SmartExportPanel';
 import Modal from './Modal';
 
-export default function AssetTable({ refreshSignal }) {
+export default function AssetTable({ refreshSignal, onEditStart, onEditEnd, backSignal }) {
   const [assets, setAssets] = useState([]);
   const [editingAsset, setEditingAsset] = useState(null);
   const [searchText, setSearchText] = useState('');
@@ -14,23 +15,20 @@ export default function AssetTable({ refreshSignal }) {
   const [showExportPanel, setShowExportPanel] = useState(false);
 
   const dropdownRef = useRef();
-  const editSectionRef = useRef(null);   // <-- new
-  const highlightTimer = useRef(null);   // <-- new
+  const editSectionRef = useRef(null);
+  const highlightTimer = useRef(null);
 
   useEffect(() => {
     loadAssets();
   }, [refreshSignal]);
 
+  // Scroll + highlight when entering edit
   useEffect(() => {
-    // When an asset is selected for editing, scroll to the form and highlight it
     if (editingAsset && editSectionRef.current) {
       editSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      // add a temporary highlight ring
       const el = editSectionRef.current;
       el.style.boxShadow = '0 0 0 3px #ffe58f';
       el.style.transition = 'box-shadow 600ms ease';
-
       clearTimeout(highlightTimer.current);
       highlightTimer.current = setTimeout(() => {
         el.style.boxShadow = 'none';
@@ -38,6 +36,16 @@ export default function AssetTable({ refreshSignal }) {
     }
     return () => clearTimeout(highlightTimer.current);
   }, [editingAsset]);
+
+  // If parent sends a back signal (e.g., header back button), close edit
+  useEffect(() => {
+    if (!backSignal) return;
+    if (editingAsset) {
+      setEditingAsset(null);
+      onEditEnd && onEditEnd();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [backSignal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAssets = async () => {
     const data = await getAllAssets();
@@ -89,6 +97,19 @@ export default function AssetTable({ refreshSignal }) {
   const clearFilter = (field) => setFilter(prev => ({ ...prev, [field]: [] }));
   const closeDropdown = () => setDropdown(prev => ({ ...prev, open: false }));
 
+  // Helpers to enter/exit edit consistently
+  const startEdit = (asset) => {
+    setEditingAsset(asset);
+    onEditStart && onEditStart();
+  };
+
+  const endEdit = (refresh = false) => {
+    setEditingAsset(null);
+    onEditEnd && onEditEnd();
+    if (refresh) loadAssets();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div style={{ padding: '20px', background: '#f9f9f9', borderRadius: '10px' }}>
       <h2 style={{ marginBottom: '10px', fontSize: '24px' }}>Asset List</h2>
@@ -124,41 +145,27 @@ export default function AssetTable({ refreshSignal }) {
       </Modal>
 
       {editingAsset && (
-        <div
-          ref={editSectionRef}  // <-- anchor for scrolling/highlight
-          style={{
-            marginBottom: '20px',
-            background: '#fffbe6',
-            padding: '15px',
-            borderRadius: '8px'
-          }}
-        >
-          <h3 style={{ marginTop: 0 }}>Edit Asset: {editingAsset.assetId}</h3>
-          <AssetForm
-            editData={editingAsset}
-            onSave={() => {
-              setEditingAsset(null);
-              loadAssets();
-              // scroll back to top of table after save
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+        <>
+         
+          <div
+            ref={editSectionRef}
+            style={{
+              marginBottom: '20px',
+              background: '#fffbe6',
+              padding: '15px',
+              borderRadius: '8px'
             }}
-          />
-          <div style={{ textAlign: 'center', marginTop: '10px' }}>
-            <button
-              onClick={() => setEditingAsset(null)}
-              style={{
-                backgroundColor: '#6c757d',
-                color: '#fff',
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel / Back to List
-            </button>
+          >
+            <h3 style={{ marginTop: 0 }}>Edit Asset: {editingAsset.assetId}</h3>
+
+            <AssetForm
+              editData={editingAsset}
+              onSave={() => endEdit(true)}     // save -> refresh + exit edit
+              onCancel={() => endEdit(false)}  // cancel -> exit edit
+              onDeleted={() => endEdit(true)}  // delete -> refresh + exit edit
+            />
           </div>
-        </div>
+        </>
       )}
 
       {filteredAssets.length === 0 ? (
@@ -193,7 +200,7 @@ export default function AssetTable({ refreshSignal }) {
                   <td style={tdStyle}>{asset.assignedTo}</td>
                   <td style={tdStyle}>
                     <button
-                      onClick={() => setEditingAsset(asset)}
+                      onClick={() => startEdit(asset)}
                       style={editBtnStyle}
                     >
                       Edit

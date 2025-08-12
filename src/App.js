@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState } from 'react';
 import AssetTable from './components/AssetTable';
 import AssetForm from './components/AssetForm';
@@ -5,12 +6,33 @@ import ScanModal from './components/ScanModal';
 
 function App() {
   const [refresh, setRefresh] = useState(Date.now());
-  const [view, setView] = useState('table'); // 'table' or 'form'
+  const [view, setView] = useState('table'); // 'table' | 'form'
   const [scanOpen, setScanOpen] = useState(false);
+  const [editData, setEditData] = useState(null); // null = add, object = edit (form view)
+
+  // For inline edit inside the table header back button
+  const [editMode, setEditMode] = useState(false);     // true when table is in inline edit
+  const [editBackSignal, setEditBackSignal] = useState(0); // timestamp signal to tell table to exit edit
+
+  const goToTable = () => {
+    setView('table');
+    setEditData(null);
+  };
+
+  const goToFormAdd = () => {
+    setEditData(null);
+    setView('form');
+  };
+
+  // If someday you want to open edit in the standalone form instead of inline:
+  const goToFormEdit = (asset) => {
+    setEditData(asset);
+    setView('form');
+  };
 
   const triggerRefresh = () => {
     setRefresh(Date.now());
-    setView('table'); // go back after save
+    goToTable(); // back after save/delete
   };
 
   const handleImportedFromScan = () => {
@@ -24,16 +46,39 @@ function App() {
 
       {view === 'table' && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 20 }}>
-            <button onClick={() => setScanOpen(true)} style={{ padding: '8px 16px' }}>
-              Scan Network
-            </button>
-            <button onClick={() => setView('form')} style={{ padding: '8px 16px' }}>
-              Add New Asset
-            </button>
+          {/* Top toolbar on table view:
+              - Left: Back to List ONLY when inline editing is active
+              - Right: actions */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 20, alignItems: 'center' }}>
+            <div>
+              {editMode && (
+                <button
+                  onClick={() => setEditBackSignal(Date.now())}
+                  style={{ padding: '8px 16px' }}
+                >
+                  ← Back to List
+                </button>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setScanOpen(true)} style={{ padding: '8px 16px' }}>
+                Scan Network
+              </button>
+              <button onClick={goToFormAdd} style={{ padding: '8px 16px' }}>
+                Add New Asset
+              </button>
+            </div>
           </div>
 
-          <AssetTable refreshSignal={refresh} />
+          <AssetTable
+            refreshSignal={refresh}
+            // Coordinate inline edit state with the header Back button
+            onEditStart={() => setEditMode(true)}
+            onEditEnd={() => setEditMode(false)}
+            backSignal={editBackSignal}
+            // If you ever want to edit in the standalone form instead of inline, you can also pass:
+            // onEdit={goToFormEdit}
+          />
 
           <ScanModal
             isOpen={scanOpen}
@@ -44,12 +89,26 @@ function App() {
       )}
 
       {view === 'form' && (
-        <div>
-          <button onClick={() => setView('table')} style={{ marginBottom: '20px' }}>
-            ← Back to List
-          </button>
-          <AssetForm onSave={triggerRefresh} />
-        </div>
+        <>
+          {/* Top toolbar on form view:
+              - Left: Back to List
+              - Right: empty to mirror layout */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 20, alignItems: 'center' }}>
+            <div>
+              <button onClick={goToTable} style={{ padding: '8px 16px' }}>
+                ← Back to List
+              </button>
+            </div>
+            <div />
+          </div>
+
+          <AssetForm
+            editData={editData}           // null => add, object => edit
+            onSave={triggerRefresh}       // after save, refresh + back
+            onCancel={goToTable}          // back without saving
+            onDeleted={triggerRefresh}    // after delete, refresh + back
+          />
+        </>
       )}
     </div>
   );
