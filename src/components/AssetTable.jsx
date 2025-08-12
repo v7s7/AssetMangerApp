@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getAllAssets, deleteAsset } from '../utils/api';
+import { getAllAssets, deleteAsset, forceDeleteAsset } from '../utils/api';
 import AssetForm from './AssetForm';
 import SmartExportPanel from './SmartExportPanel';
 import Modal from './Modal';
-import {  forceDeleteAsset } from '../utils/api';
 
 export default function AssetTable({ refreshSignal }) {
   const [assets, setAssets] = useState([]);
@@ -13,11 +12,32 @@ export default function AssetTable({ refreshSignal }) {
   const [dropdown, setDropdown] = useState({ field: null, open: false });
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [showExportPanel, setShowExportPanel] = useState(false);
+
   const dropdownRef = useRef();
+  const editSectionRef = useRef(null);   // <-- new
+  const highlightTimer = useRef(null);   // <-- new
 
   useEffect(() => {
     loadAssets();
   }, [refreshSignal]);
+
+  useEffect(() => {
+    // When an asset is selected for editing, scroll to the form and highlight it
+    if (editingAsset && editSectionRef.current) {
+      editSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // add a temporary highlight ring
+      const el = editSectionRef.current;
+      el.style.boxShadow = '0 0 0 3px #ffe58f';
+      el.style.transition = 'box-shadow 600ms ease';
+
+      clearTimeout(highlightTimer.current);
+      highlightTimer.current = setTimeout(() => {
+        el.style.boxShadow = 'none';
+      }, 1200);
+    }
+    return () => clearTimeout(highlightTimer.current);
+  }, [editingAsset]);
 
   const loadAssets = async () => {
     const data = await getAllAssets();
@@ -25,48 +45,36 @@ export default function AssetTable({ refreshSignal }) {
   };
 
   const filteredAssets = assets.filter(asset => {
-    const matchGroup =
-      filter.group.length > 0 ? filter.group.includes(asset.group) : true;
-    const matchType =
-      filter.assetType.length > 0 ? filter.assetType.includes(asset.assetType) : true;
-   const matchSearch = searchText.trim()
-  ? Object.values(asset).some(val =>
-      typeof val === 'string' &&
-      val.toLowerCase().includes(searchText.toLowerCase())
-    )
-  : true;
-
-
+    const matchGroup = filter.group.length > 0 ? filter.group.includes(asset.group) : true;
+    const matchType = filter.assetType.length > 0 ? filter.assetType.includes(asset.assetType) : true;
+    const matchSearch = searchText.trim()
+      ? Object.values(asset).some(val => typeof val === 'string' && val.toLowerCase().includes(searchText.toLowerCase()))
+      : true;
     return matchGroup && matchType && matchSearch;
   });
 
   async function handleDelete(asset) {
-  try {
-    if (asset.assetId) {
-      await deleteAsset(asset.assetId);
-    } else {
-      await forceDeleteAsset({
-        macAddress: asset.macAddress,
-        ipAddress: asset.ipAddress
-      });
+    try {
+      if (asset.assetId) {
+        await deleteAsset(asset.assetId);
+      } else {
+        await forceDeleteAsset({ macAddress: asset.macAddress, ipAddress: asset.ipAddress });
+      }
+      alert('Asset deleted');
+      loadAssets();
+    } catch (err) {
+      console.error(err);
+      alert('Delete failed');
     }
-    alert('Asset deleted');
-loadAssets();
-  } catch (err) {
-    console.error(err);
-    alert('Delete failed');
   }
-}
 
   const toggleDropdown = (e, field) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setDropdown({ field, open: true });
-setDropdownPosition({ top: rect.bottom, left: rect.left });
+    setDropdownPosition({ top: rect.bottom, left: rect.left });
   };
 
-  const uniqueValues = (field) => {
-    return Array.from(new Set(assets.map(a => a[field]).filter(Boolean)));
-  };
+  const uniqueValues = (field) => Array.from(new Set(assets.map(a => a[field]).filter(Boolean)));
 
   const handleCheckboxChange = (field, value) => {
     setFilter(prev => {
@@ -78,13 +86,8 @@ setDropdownPosition({ top: rect.bottom, left: rect.left });
     });
   };
 
-  const clearFilter = (field) => {
-    setFilter(prev => ({ ...prev, [field]: [] }));
-  };
-
-  const closeDropdown = () => {
-    setDropdown(prev => ({ ...prev, open: false }));
-  };
+  const clearFilter = (field) => setFilter(prev => ({ ...prev, [field]: [] }));
+  const closeDropdown = () => setDropdown(prev => ({ ...prev, open: false }));
 
   return (
     <div style={{ padding: '20px', background: '#f9f9f9', borderRadius: '10px' }}>
@@ -121,30 +124,42 @@ setDropdownPosition({ top: rect.bottom, left: rect.left });
       </Modal>
 
       {editingAsset && (
-  <div style={{ marginBottom: '20px', background: '#fffbe6', padding: '15px', borderRadius: '8px' }}>
-    <h3 style={{ marginTop: 0 }}>Edit Asset: {editingAsset.assetId}</h3>
-    <AssetForm editData={editingAsset} onSave={() => {
-      setEditingAsset(null);
-      loadAssets();
-    }} />
-    <div style={{ textAlign: 'center', marginTop: '10px' }}>
-      <button
-        onClick={() => setEditingAsset(null)}
-        style={{
-          backgroundColor: '#6c757d',
-          color: '#fff',
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        Cancel / Back to List 
-      </button>
-    </div>
-  </div>
-)}
-
+        <div
+          ref={editSectionRef}  // <-- anchor for scrolling/highlight
+          style={{
+            marginBottom: '20px',
+            background: '#fffbe6',
+            padding: '15px',
+            borderRadius: '8px'
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>Edit Asset: {editingAsset.assetId}</h3>
+          <AssetForm
+            editData={editingAsset}
+            onSave={() => {
+              setEditingAsset(null);
+              loadAssets();
+              // scroll back to top of table after save
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+          <div style={{ textAlign: 'center', marginTop: '10px' }}>
+            <button
+              onClick={() => setEditingAsset(null)}
+              style={{
+                backgroundColor: '#6c757d',
+                color: '#fff',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel / Back to List
+            </button>
+          </div>
+        </div>
+      )}
 
       {filteredAssets.length === 0 ? (
         <p style={{ fontStyle: 'italic', color: '#999' }}>No assets found.</p>
@@ -167,8 +182,8 @@ setDropdownPosition({ top: rect.bottom, left: rect.left });
                 <tr
                   key={asset.assetId}
                   style={{ borderBottom: '1px solid #ddd', transition: 'background 0.2s' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f1f1'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = ''}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f1f1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '')}
                 >
                   <td style={tdStyle}>{asset.assetId}</td>
                   <td style={tdStyle}>{asset.group}</td>
@@ -177,8 +192,15 @@ setDropdownPosition({ top: rect.bottom, left: rect.left });
                   <td style={tdStyle}>{asset.serialNumber}</td>
                   <td style={tdStyle}>{asset.assignedTo}</td>
                   <td style={tdStyle}>
-                    <button onClick={() => setEditingAsset(asset)} style={editBtnStyle}>Edit</button>
-<button onClick={() => handleDelete(asset)} style={deleteBtnStyle}>Delete</button>
+                    <button
+                      onClick={() => setEditingAsset(asset)}
+                      style={editBtnStyle}
+                    >
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(asset)} style={deleteBtnStyle}>
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

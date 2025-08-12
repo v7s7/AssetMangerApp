@@ -1,6 +1,11 @@
+// index.js (full updated)
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+const { spawn } = require('child_process');
+const path = require('path');
+
 const app = express();
 const PORT = 4000;
 
@@ -52,7 +57,21 @@ db.run(`CREATE TABLE IF NOT EXISTS used_ids (
   assetId TEXT PRIMARY KEY
 )`);
 
+// --- Helpers ---
+function requireMinimalFields(body) {
+  const required = ['group', 'assetType', 'assetId'];
+  const missing = required.filter(
+    (f) => !body[f] || String(body[f]).trim() === ''
+  );
+  return missing;
+}
+
 // === ROUTES ===
+
+// Health check (optional)
+app.get('/health', (req, res) => {
+  res.json({ ok: true, time: new Date().toISOString() });
+});
 
 // Get all assets
 app.get('/assets', (req, res) => {
@@ -65,7 +84,13 @@ app.get('/assets', (req, res) => {
 // Add new asset
 app.post('/assets', (req, res) => {
   const asset = req.body;
-  const fields = Object.keys(asset).map(f => f === 'group' ? `"group"` : f);
+
+  const missing = requireMinimalFields(asset);
+  if (missing.length) {
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  }
+
+  const fields = Object.keys(asset).map(f => (f === 'group' ? `"group"` : f));
   const placeholders = fields.map(() => '?').join(',');
   const sql = `INSERT INTO assets (${fields.join(',')}) VALUES (${placeholders})`;
 
@@ -77,6 +102,44 @@ app.post('/assets', (req, res) => {
   });
 });
 
+// Bulk insert assets
+app.post('/assets/bulk', (req, res) => {
+  const list = req.body?.assets;
+  if (!Array.isArray(list) || list.length === 0) {
+    return res.status(400).json({ error: 'No assets provided' });
+  }
+
+  const required = ['assetId', 'group', 'assetType'];
+  const badIdx = list.findIndex(a => required.some(f => !a[f] || String(a[f]).trim() === ''));
+  if (badIdx >= 0) {
+    return res.status(400).json({ error: `Asset at index ${badIdx} missing required fields` });
+  }
+
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO assets (
+      assetId,"group",assetType,brandModel,serialNumber,assignedTo,ipAddress,macAddress,osFirmware,cpu,ram,storage,
+      portDetails,powerConsumption,purchaseDate,warrantyExpiry,eol,maintenanceExpiry,cost,depreciation,residualValue,
+      status,condition,usagePurpose,accessLevel,licenseKey,complianceStatus,documentation,remarks,lastAuditDate,disposedDate,replacementPlan
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  );
+
+  db.serialize(() => {
+    list.forEach(a => {
+      insert.run([
+        a.assetId, a.group, a.assetType, a.brandModel, a.serialNumber, a.assignedTo, a.ipAddress, a.macAddress, a.osFirmware, a.cpu, a.ram, a.storage,
+        a.portDetails, a.powerConsumption, a.purchaseDate, a.warrantyExpiry, a.eol, a.maintenanceExpiry, a.cost, a.depreciation, a.residualValue,
+        a.status, a.condition, a.usagePurpose, a.accessLevel, a.licenseKey, a.complianceStatus, a.documentation, a.remarks, a.lastAuditDate, a.disposedDate, a.replacementPlan
+      ]);
+      db.run(`INSERT OR IGNORE INTO used_ids (assetId) VALUES (?)`, [a.assetId]);
+    });
+  });
+
+  insert.finalize((err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ inserted: list.length });
+  });
+});
+
 // Update asset (including ID change)
 app.put('/assets/:id', (req, res) => {
   const asset = req.body;
@@ -84,14 +147,19 @@ app.put('/assets/:id', (req, res) => {
   const newId = asset.assetId;
 
   if (!asset || Object.keys(asset).length === 0) {
-    return res.status(400).json({ error: "No data provided for update" });
+    return res.status(400).json({ error: 'No data provided for update' });
+  }
+
+  const missing = requireMinimalFields(asset);
+  if (missing.length) {
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
   }
 
   if (oldId !== newId) {
     db.run(`DELETE FROM assets WHERE assetId = ?`, oldId, function (err) {
       if (err) return res.status(500).json({ error: err.message });
 
-      const fields = Object.keys(asset).map(f => f === 'group' ? `"group"` : f);
+      const fields = Object.keys(asset).map(f => (f === 'group' ? `"group"` : f));
       const placeholders = fields.map(() => '?').join(',');
       const sql = `INSERT INTO assets (${fields.join(',')}) VALUES (${placeholders})`;
 
@@ -179,7 +247,7 @@ app.get('/assets/next-id/:type', (req, res) => {
     const numbers = rows
       .map(row => {
         const match = row.assetId.match(new RegExp(`^${safePrefix}-(\\d+)$`));
-        return match ? parseInt(match[1]) : null;
+        return match ? parseInt(match[1], 10) : null;
       })
       .filter(n => n !== null);
 
@@ -190,7 +258,92 @@ app.get('/assets/next-id/:type', (req, res) => {
   });
 });
 
+// --- New: scan via Python (dry-run, returns JSON list)
+app.post('/scan', (req, res) => {
+  const target = (req.body?.target || '').trim();
+  if (!target) return res.status(400).send('Target is required');
+
+  const PY = process.env.PYTHON || 'python'; // or 'python3'
+  const script = path.join(__dirname, 'scanner.py'); // ensure scanner.py sits next to index.js
+
+  const args = [
+    script,
+    '--target', target,
+    '--api-url', `http://localhost:${PORT}`,
+    '--dry-run',
+    '--json'
+  ];
+
+  const child = spawn(PY, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+
+  let out = '', err = '';
+  child.stdout.on('data', d => (out += d.toString()));
+  child.stderr.on('data', d => (err += d.toString()));
+  child.on('close', (code) => {
+    if (code !== 0) return res.status(500).send(err || `Scanner exited with ${code}`);
+    try {
+      const list = JSON.parse(out);
+      return res.json(Array.isArray(list) ? list : []);
+    } catch {
+      return res.status(500).send('Invalid scanner output');
+    }
+  });
+});
+// index.js (add near bottom, before app.listen)
+app.get('/scan/stream', (req, res) => {
+  const target = (req.query.target || '').trim();
+  if (!target) return res.status(400).end('Target is required');
+
+  const PY = process.env.PYTHON || 'python'; // or full path
+  const script = require('path').join(__dirname, 'scanner.py');
+  const args = [script, '--target', target, '--api-url', `http://localhost:${PORT}`, '--dry-run', '--json'];
+
+  // SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  const child = require('child_process').spawn(PY, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+
+  let out = '';
+
+  const send = (event, data) => {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${data}\n\n`);
+  };
+
+  child.stderr.on('data', (d) => {
+    // Each line is a log line from scanner.py
+    String(d).split(/\r?\n/).forEach((line) => {
+      if (line.trim()) send('log', line.trim());
+    });
+  });
+
+  child.stdout.on('data', (d) => {
+    out += d.toString();
+  });
+
+  child.on('close', (code) => {
+    if (code !== 0) {
+      send('error', `Scanner exited with code ${code}`);
+      return res.end();
+    }
+    try {
+      const list = JSON.parse(out || '[]');
+      send('result', JSON.stringify(list));
+    } catch (e) {
+      send('error', `Invalid JSON: ${e.message}`);
+    }
+    res.end();
+  });
+
+  req.on('close', () => {
+    try { child.kill(); } catch {}
+  });
+});
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running at http://10.27.16.58:${PORT}`);
+  console.log(`✅ Server running on port ${PORT} (listening on 0.0.0.0)`);
 });

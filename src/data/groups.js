@@ -9,5 +9,6 @@ export const groups = [
   "Network Devices",
   "Security Systems",
   "Software",
-  "Internet & Access"
+  "Internet & Access",
+  "Data Center"
 ];
