@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import AssetTable from './components/AssetTable';
 import AssetForm from './components/AssetForm';
 import ScanModal from './components/ScanModal';
+import Dashboard from './components/Dashboard'; // <-- new
 
 function App() {
   const [refresh, setRefresh] = useState(Date.now());
-  const [view, setView] = useState('table'); // 'table' | 'form'
+  const [view, setView] = useState('table'); // 'table' | 'form' | 'dashboard'
   const [scanOpen, setScanOpen] = useState(false);
   const [editData, setEditData] = useState(null); // null = add, object = edit (form view)
 
@@ -29,6 +30,8 @@ function App() {
     setEditData(asset);
     setView('form');
   };
+
+  const goToDashboard = () => setView('dashboard');
 
   const triggerRefresh = () => {
     setRefresh(Date.now());
@@ -63,6 +66,9 @@ function App() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setScanOpen(true)} style={{ padding: '8px 16px' }}>
                 Scan Network
+              </button>
+              <button onClick={goToDashboard} style={{ padding: '8px 16px' }}>
+                Dashboard
               </button>
               <button onClick={goToFormAdd} style={{ padding: '8px 16px' }}>
                 Add New Asset
@@ -108,6 +114,24 @@ function App() {
             onCancel={goToTable}          // back without saving
             onDeleted={triggerRefresh}    // after delete, refresh + back
           />
+        </>
+      )}
+
+      {view === 'dashboard' && (
+        <>
+          {/* Top toolbar on dashboard view:
+              - Left: Back to List
+              - Right: empty to mirror layout */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 20, alignItems: 'center' }}>
+            <div>
+              <button onClick={goToTable} style={{ padding: '8px 16px' }}>
+                ← Back to List
+              </button>
+            </div>
+            <div />
+          </div>
+
+          <Dashboard />
         </>
       )}
     </div>

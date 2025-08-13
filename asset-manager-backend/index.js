@@ -14,7 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 // DB setup
-const db = new sqlite3.Database('./assets.db');
+const dbPath = path.resolve(__dirname, 'assets.db');
+const db = new sqlite3.Database(dbPath);
 
 // Assets table
 db.run(`CREATE TABLE IF NOT EXISTS assets (

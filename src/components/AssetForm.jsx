@@ -11,6 +11,7 @@ export default function AssetForm({ onSave, editData }) {
   const isEdit = !!editData;
   const [formData, setFormData] = useState(null);
   const [originalId, setOriginalId] = useState(null);
+const STATUS_OPTIONS = ['Active', 'Not active', 'Retired', 'Suspended'];
 
   // extra fields for "Other"
   const [otherGroup, setOtherGroup] = useState('');
@@ -239,6 +240,8 @@ export default function AssetForm({ onSave, editData }) {
             const isDate = field.toLowerCase().includes('date');
             const isTextArea = ['remarks', 'documentation'].includes(field);
             const isGroup = field === 'group';
+            const isStatus = field === 'status';
+
             const isAssetType = field === 'assetType';
             const isAssetId = field === 'assetId';
             const isNumeric = numericFields.includes(field);
@@ -337,6 +340,19 @@ export default function AssetForm({ onSave, editData }) {
                         : undefined
                     }
                   />
+                  ) : isStatus ? (
+  <select
+    name="status"
+    value={formData.status || ''}
+    onChange={handleChange}
+    style={inputStyle}
+  >
+    <option value="">Select</option>
+    {STATUS_OPTIONS.map((s) => (
+      <option key={s} value={s}>{s}</option>
+    ))}
+  </select>
+
                 ) : (
                   <input
                     type={isDate ? 'date' : isNumeric ? 'number' : 'text'}
@@ -345,6 +361,7 @@ export default function AssetForm({ onSave, editData }) {
                     onChange={handleChange}
                     style={inputStyle}
                   />
+                  
                 )}
               </div>
             );

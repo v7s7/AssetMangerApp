@@ -160,9 +160,9 @@ export default function AssetTable({ refreshSignal, onEditStart, onEditEnd, back
 
             <AssetForm
               editData={editingAsset}
-              onSave={() => endEdit(true)}     // save -> refresh + exit edit
-              onCancel={() => endEdit(false)}  // cancel -> exit edit
-              onDeleted={() => endEdit(true)}  // delete -> refresh + exit edit
+              onSave={() => endEdit(true)}     
+              onCancel={() => endEdit(false)}  
+              onDeleted={() => endEdit(true)}  
             />
           </div>
         </>
