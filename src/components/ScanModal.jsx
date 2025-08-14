@@ -29,8 +29,7 @@ export default function ScanModal({ isOpen, onClose, onImported }) {
     setLoading(true);
 
     const url = `${API_URL}/scan/stream?target=${encodeURIComponent(target.trim())}`;
-    const es = new EventSource(url);
-    setSource(es);
+const es = new EventSource(url, { withCredentials: true });    setSource(es);
 
     es.addEventListener('log', (e) => {
       pushLog(e.data);

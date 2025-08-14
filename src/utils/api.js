@@ -1,8 +1,15 @@
 // src/utils/api.js
 
-// Prefer environment variable; fall back to your current server IP.
+// Prefer environment variable; otherwise default to the SAME host you opened the app on.
+// This avoids localhost/IP mismatches during dev and LAN testing.
 // Restart `npm start` after changing .env (REACT_APP_API_URL).
-export const API_URL = (process.env.REACT_APP_API_URL || 'http://10.27.16.97:4000').replace(/\/+$/, '');
+const defaultHost =
+  typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const defaultProtocol =
+  typeof window !== 'undefined' ? window.location.protocol : 'http:';
+const DEFAULT_API = `${defaultProtocol}//${defaultHost}:4000`;
+
+export const API_URL = (process.env.REACT_APP_API_URL || DEFAULT_API).replace(/\/+$/, '');
 
 // Small helper to standardize fetch + errors
 async function request(path, options = {}) {
@@ -15,6 +22,7 @@ async function request(path, options = {}) {
       ...(options.headers || {}),
     },
     method,
+    credentials: 'include', // IMPORTANT: send/receive session cookie
     ...options,
   });
 
@@ -33,7 +41,23 @@ async function request(path, options = {}) {
   return payload;
 }
 
-// ===== Assets CRUD =====
+/* ===== Auth helpers ===== */
+export function authMe() {
+  return request('/auth/me', { method: 'GET' });
+}
+
+export function login(username, password) {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export function logout() {
+  return request('/auth/logout', { method: 'POST' });
+}
+
+/* ===== Assets CRUD ===== */
 
 // Get all assets
 export async function getAllAssets() {
@@ -74,7 +98,7 @@ export async function forceDeleteAsset({ assetId, macAddress, ipAddress }) {
   return request(`/assets/force-delete?${params.toString()}`, { method: 'DELETE' });
 }
 
-// ===== ID Generation =====
+/* ===== ID Generation ===== */
 
 // Get the next available asset ID (based on assetType)
 // Note: this does NOT reserve the ID on the server.
@@ -89,7 +113,7 @@ export async function getNextAssetIdByType(assetType) {
   return getNextAssetId(assetType);
 }
 
-// ===== Scanning & Bulk Insert =====
+/* ===== Scanning & Bulk Insert ===== */
 
 // Non-streaming scan (returns JSON list of discovered devices; not inserted yet)
 export async function scanNetwork(target) {

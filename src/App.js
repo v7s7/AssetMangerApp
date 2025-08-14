@@ -1,36 +1,49 @@
 // src/App.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AssetTable from './components/AssetTable';
 import AssetForm from './components/AssetForm';
 import ScanModal from './components/ScanModal';
-import Dashboard from './components/Dashboard'; // <-- new
+import Dashboard from './components/Dashboard';
+import LoginPage from './components/LoginPage';
+import { authMe, logout } from './utils/api';
 
 function App() {
+  // Auth
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { user } = await authMe();
+        setUser(user);
+      } catch {
+        setUser(null);
+      } finally {
+        setChecking(false);
+      }
+    })();
+  }, []);
+
+  // App view state
   const [refresh, setRefresh] = useState(Date.now());
   const [view, setView] = useState('table'); // 'table' | 'form' | 'dashboard'
   const [scanOpen, setScanOpen] = useState(false);
   const [editData, setEditData] = useState(null); // null = add, object = edit (form view)
 
-  // For inline edit inside the table header back button
-  const [editMode, setEditMode] = useState(false);     // true when table is in inline edit
-  const [editBackSignal, setEditBackSignal] = useState(0); // timestamp signal to tell table to exit edit
+  // Inline edit coordination with table
+  const [editMode, setEditMode] = useState(false);         // true when table is in inline edit
+  const [editBackSignal, setEditBackSignal] = useState(0); // timestamp to tell table to exit edit
 
+  // Navigation helpers
   const goToTable = () => {
     setView('table');
     setEditData(null);
   };
-
   const goToFormAdd = () => {
     setEditData(null);
     setView('form');
   };
-
-  // If someday you want to open edit in the standalone form instead of inline:
-  const goToFormEdit = (asset) => {
-    setEditData(asset);
-    setView('form');
-  };
-
   const goToDashboard = () => setView('dashboard');
 
   const triggerRefresh = () => {
@@ -43,9 +56,29 @@ function App() {
     setRefresh(Date.now()); // reload table after import
   };
 
+  // Auth gating
+  if (checking) {
+    return <div style={{ padding: 20 }}>Loading…</div>;
+  }
+  if (!user) {
+    return <LoginPage onLoggedIn={setUser} />;
+  }
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ textAlign: 'center' }}>IT Asset Manager</h1>
+      {/* Header with user + logout */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>IT Asset Manager</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ color: '#555', fontSize: 14 }}>{user?.name || user?.email}</span>
+          <button
+            onClick={async () => { await logout(); setUser(null); }}
+            style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
 
       {view === 'table' && (
         <>
@@ -83,7 +116,7 @@ function App() {
             onEditEnd={() => setEditMode(false)}
             backSignal={editBackSignal}
             // If you ever want to edit in the standalone form instead of inline, you can also pass:
-            // onEdit={goToFormEdit}
+            // onEdit={(asset) => { setEditData(asset); setView('form'); }}
           />
 
           <ScanModal
