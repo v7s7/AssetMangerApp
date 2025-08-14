@@ -10,7 +10,7 @@
 
   --brand: #2563eb;      /* primary */
   --brand-2: #1d4ed8;
-  --accent: #10b981;     /* buttons like "Add" */
+  --accent: #28a745;     /* classic green for Add buttons */
   --danger: #dc2626;
 
   --radius: 12px;
@@ -39,7 +39,7 @@ body { margin: 0; font-family: var(--font); color: var(--text); background: var(
   color: var(--muted);
 }
 
-/* Auth */
+/* ===== Auth (keep as you liked) ===== */
 .auth-wrap { background: var(--bg); }
 .auth-card {
   width: 100%;
@@ -89,21 +89,21 @@ body { margin: 0; font-family: var(--font); color: var(--text); background: var(
   font-size: 13px;
 }
 
-/* App shell */
+/* ===== App shell ===== */
 .app-shell { max-width: 1200px; margin: 0 auto; padding: 20px; }
 .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .app-title { margin: 0; }
 .user-bar { display: flex; align-items: center; gap: 12px; }
 .user-name { color: var(--muted); font-size: 14px; }
 
-/* Toolbar */
+/* ===== Toolbar ===== */
 .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 16px 0 20px; }
 .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; }
 
-/* Buttons */
+/* Buttons (generic) */
 .btn {
   padding: 8px 14px;
-  margin-top: 15px;
+  margin-top: 0;                 /* removed extra top gap */
   border: 1px solid var(--line);
   background: #f9fafb;
   border-radius: 10px;
@@ -128,8 +128,29 @@ body { margin: 0; font-family: var(--font); color: var(--text); background: var(
   letter-spacing: .2px;
 }
 .btn-accent {
-  background: var(--accent);
+  background: var(--accent);     /* classic green */
   color: #fff;
   border: none;
 }
 .btn:disabled, .btn-primary:disabled { opacity: .7; cursor: not-allowed; }
+
+/* ===== Optional: table action buttons (only if you want to use classes instead of inline styles)
+   Your current AssetTable already has inline styles for Edit/Delete, so you don't need these.
+   If you ever switch, add className="btn-edit" / "btn-delete" to those buttons.
+*/
+.btn-edit {
+  background: #007bff;
+  color: #fff;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-delete {
+  background: #dc3545;
+  color: #fff;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
