@@ -103,7 +103,7 @@ body { margin: 0; font-family: var(--font); color: var(--text); background: var(
 /* Buttons (generic) */
 .btn {
   padding: 8px 14px;
-  margin-top: 0;                 /* removed extra top gap */
+  margin-top: 15px;                 /* removed extra top gap */
   border: 1px solid var(--line);
   background: #f9fafb;
   border-radius: 10px;
