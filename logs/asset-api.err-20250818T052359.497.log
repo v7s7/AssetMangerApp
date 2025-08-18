@@ -1,0 +1,28 @@
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: spawn python ENOENT
+    at ChildProcess._handle.onexit (node:internal/child_process:285:19)
+    at onErrorNT (node:internal/child_process:483:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Emitted 'error' event on ChildProcess instance at:
+    at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+    at onErrorNT (node:internal/child_process:483:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'spawn python',
+  path: 'python',
+  spawnargs: [
+    'E:\\Apps\\FAS\\asset-manager-backend\\scanner.py',
+    '--target',
+    '10.27.16.25',
+    '--api-url',
+    'http://localhost:4000',
+    '--dry-run',
+    '--json'
+  ]
+}
+
+Node.js v22.18.0

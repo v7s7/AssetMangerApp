@@ -1,0 +1,2 @@
+[dotenv@17.2.1] injecting env (8) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+✅ Server running on port 4000 (listening on 0.0.0.0)

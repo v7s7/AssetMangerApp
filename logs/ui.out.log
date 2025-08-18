@@ -1,0 +1,153 @@
+ INFO  Accepting connections at http://localhost:3100
+ HTTP  8/14/2025 11:21:59 AM 10.27.16.217 GET /ws
+ HTTP  8/14/2025 11:21:59 AM 10.27.16.217 Returned 200 in 15 ms
+ HTTP  8/14/2025 11:22:05 AM ::1 GET /
+ HTTP  8/14/2025 11:22:05 AM ::1 Returned 200 in 2 ms
+ HTTP  8/14/2025 11:22:20 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:22:20 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:22:32 AM 10.27.16.217 GET /ws
+ HTTP  8/14/2025 11:22:32 AM 10.27.16.217 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:22:51 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:22:51 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:22:51 AM 10.27.16.97 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:22:51 AM 10.27.16.97 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:22:51 AM 10.27.16.97 Returned 200 in 13 ms
+ HTTP  8/14/2025 11:22:51 AM 10.27.16.97 Returned 200 in 17 ms
+ HTTP  8/14/2025 11:23:37 AM 10.27.16.217 GET /ws
+ HTTP  8/14/2025 11:23:37 AM 10.27.16.217 Returned 200 in 0 ms
+ HTTP  8/14/2025 11:25:24 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:25:24 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:25:24 AM 10.27.16.97 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:25:24 AM 10.27.16.97 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:25:24 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:25:24 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 GET /
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 GET /favicon.ico
+ HTTP  8/14/2025 11:25:52 AM 10.27.16.153 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:26:29 AM 10.27.16.97 GET /ws
+ HTTP  8/14/2025 11:26:29 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:26:29 AM ::1 GET /ws
+ HTTP  8/14/2025 11:26:29 AM 10.27.17.20 GET /ws
+ HTTP  8/14/2025 11:26:29 AM ::1 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:26:29 AM 10.27.17.20 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:26:30 AM 10.27.16.97 GET /ws
+ HTTP  8/14/2025 11:26:30 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 GET /favicon.ico
+ HTTP  8/14/2025 11:27:54 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:28:01 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:28:01 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:28:01 AM 10.27.16.97 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:28:01 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:28:01 AM 10.27.16.97 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:28:01 AM 10.27.16.97 Returned 200 in 0 ms
+ HTTP  8/14/2025 11:28:02 AM 10.27.16.97 GET /favicon.ico
+ HTTP  8/14/2025 11:28:02 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:29:23 AM 10.27.16.153 GET /
+ HTTP  8/14/2025 11:29:23 AM 10.27.16.153 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:29:23 AM 10.27.16.153 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:29:23 AM 10.27.16.153 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:29:23 AM 10.27.16.153 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:29:23 AM 10.27.16.153 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:29:53 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:29:53 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:29:53 AM 10.27.16.97 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:29:53 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:29:53 AM 10.27.16.97 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:29:53 AM 10.27.16.97 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 GET /
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 Returned 200 in 0 ms
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 GET /favicon.ico
+ HTTP  8/14/2025 11:30:11 AM 10.27.16.217 Returned 200 in 1 ms
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 GET /
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 Returned 304 in 0 ms
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 Returned 304 in 0 ms
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 GET /favicon.ico
+ HTTP  8/14/2025 11:30:34 AM 10.27.16.217 Returned 304 in 0 ms
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 GET /
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 Returned 304 in 0 ms
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 Returned 304 in 1 ms
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 Returned 304 in 0 ms
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 GET /favicon.ico
+ HTTP  8/14/2025 11:30:36 AM 10.27.16.217 Returned 304 in 2 ms
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 GET /
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 Returned 200 in 0 ms
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 GET /static/js/main.a70e0bde.js
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 Returned 200 in 0 ms
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 Returned 200 in 2 ms
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 GET /favicon.ico
+ HTTP  8/14/2025 11:31:18 AM 10.27.16.217 Returned 200 in 1 ms
+
+ INFO  Gracefully shutting down. Please wait...
+ INFO  Accepting connections at http://localhost:3100
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 GET /
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 Returned 200 in 19 ms
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 GET /static/js/main.754d1da8.js
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 GET /static/css/main.8419e202.css
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 Returned 200 in 2 ms
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 Returned 200 in 7 ms
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 GET /favicon.ico
+ HTTP  8/14/2025 11:41:00 AM 10.27.16.97 Returned 200 in 1 ms
+ HTTP  8/17/2025 8:40:30 AM 10.27.16.116 GET /
+ HTTP  8/17/2025 8:40:30 AM 10.27.16.116 Returned 200 in 1 ms
+ HTTP  8/17/2025 8:40:30 AM 10.27.16.116 GET /static/js/main.754d1da8.js
+ HTTP  8/17/2025 8:40:30 AM 10.27.16.116 Returned 200 in 1 ms
+ HTTP  8/17/2025 8:40:30 AM 10.27.16.116 GET /static/css/main.8419e202.css
+ HTTP  8/17/2025 8:40:30 AM 10.27.16.116 Returned 304 in 2 ms
+ HTTP  8/17/2025 8:42:50 AM 10.27.17.20 GET /
+ HTTP  8/17/2025 8:42:50 AM 10.27.17.20 Returned 200 in 1 ms
+ HTTP  8/17/2025 8:42:50 AM 10.27.17.20 GET /static/js/main.754d1da8.js
+ HTTP  8/17/2025 8:42:50 AM 10.27.17.20 Returned 200 in 3 ms
+ HTTP  8/17/2025 8:42:50 AM 10.27.17.20 GET /static/css/main.8419e202.css
+ HTTP  8/17/2025 8:42:50 AM 10.27.17.20 Returned 200 in 0 ms
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 GET /
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 Returned 200 in 1 ms
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 GET /static/js/main.754d1da8.js
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 GET /static/css/main.8419e202.css
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 Returned 200 in 1 ms
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 Returned 200 in 0 ms
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 GET /favicon.ico
+ HTTP  8/17/2025 8:58:51 AM 10.27.16.116 Returned 200 in 1 ms
+ HTTP  8/17/2025 9:08:44 AM 10.27.16.116 GET /
+ HTTP  8/17/2025 9:08:44 AM 10.27.16.116 Returned 304 in 1 ms
+ HTTP  8/17/2025 9:08:44 AM 10.27.16.116 GET /static/js/main.754d1da8.js
+ HTTP  8/17/2025 9:08:44 AM 10.27.16.116 Returned 304 in 1 ms
+ HTTP  8/17/2025 9:08:44 AM 10.27.16.116 GET /static/css/main.8419e202.css
+ HTTP  8/17/2025 9:08:44 AM 10.27.16.116 Returned 304 in 5 ms
+ HTTP  8/17/2025 9:13:24 AM 10.27.16.116 GET /
+ HTTP  8/17/2025 9:13:24 AM 10.27.16.116 Returned 304 in 1 ms
+ HTTP  8/17/2025 9:13:24 AM 10.27.16.116 GET /static/js/main.754d1da8.js
+ HTTP  8/17/2025 9:13:24 AM 10.27.16.116 GET /static/css/main.8419e202.css
+ HTTP  8/17/2025 9:13:24 AM 10.27.16.116 Returned 304 in 1 ms
+ HTTP  8/17/2025 9:13:24 AM 10.27.16.116 Returned 304 in 1 ms
+
+ INFO  Gracefully shutting down. Please wait...
+ INFO  Accepting connections at http://localhost:3100
+
+ INFO  Gracefully shutting down. Please wait...
+ INFO  Accepting connections at http://localhost:3100
+
+ INFO  Gracefully shutting down. Please wait...
+ INFO  Accepting connections at http://localhost:3100
+
+ INFO  Gracefully shutting down. Please wait...
